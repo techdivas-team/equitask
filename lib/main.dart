@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'services/service_provider.dart';
 import 'views/auth/login_screen.dart';
 import 'views/auth/signup_screen.dart';
+import 'views/auth/invite_employee_signup_screen.dart';
 import 'views/auth/forgot_password_screen.dart';
+import 'views/onboarding/account_type_screen.dart';
 import 'views/onboarding/role_selection_screen.dart';
 import 'views/onboarding/accessibility_screen.dart';
 import 'views/employee/dashboard_screen.dart';
@@ -38,6 +40,9 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/signup': (context) => const SignupScreen(),
           '/forgot-password': (context) => const ForgotPasswordScreen(),
+          '/signup/invite-employee': (context) =>
+              const InviteEmployeeSignupScreen(),
+          '/onboarding/account-type': (context) => const AccountTypeScreen(),
           '/onboarding/role': (context) => const RoleSelectionScreen(),
           '/onboarding/accessibility': (context) => const AccessibilityScreen(),
           '/dashboard': (context) => const DashboardScreen(),

@@ -20,14 +20,20 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
+    final rawPriority = (json['priority'] ?? json['urgencyColor'] ?? 'normal')
+        .toString();
+    final rawDueDate = json['dueDate']?.toString();
+
     return Task(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      dueDate: DateTime.parse(json['dueDate']),
-      priority: _priorityFromString(json['priority']),
-      status: json['status'],
-      isActive: json['isActive'],
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] ?? '').toString(),
+      description: (json['description'] ?? '').toString(),
+      dueDate: rawDueDate != null
+          ? DateTime.tryParse(rawDueDate) ?? DateTime.now()
+          : DateTime.now(),
+      priority: _priorityFromString(rawPriority),
+      status: (json['status'] ?? 'Pending').toString(),
+      isActive: (json['isActive'] as bool?) ?? true,
     );
   }
 

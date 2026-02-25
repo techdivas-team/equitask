@@ -12,11 +12,14 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final email = (json['email'] ?? '').toString();
+    final fallbackName = email.contains('@') ? email.split('@').first : 'User';
+
     return User(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      avatarUrl: json['avatarUrl'],
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      name: (json['name'] ?? fallbackName).toString(),
+      email: email,
+      avatarUrl: json['avatarUrl']?.toString(),
     );
   }
 

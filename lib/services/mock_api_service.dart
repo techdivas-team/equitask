@@ -1,6 +1,13 @@
 import 'api_services.dart';
 
 class MockApiService implements ApiService {
+  final Set<String> _validInviteCodes = {'EQT-INV-1001', 'EQT-INV-2026'};
+
+  final Set<String> _organizationEmployeeEmails = {
+    'employee@equitask.ai',
+    'staff@equitask.ai',
+  };
+
   final List<Map<String, dynamic>> _tasks = [
     {
       'id': '1',
@@ -167,11 +174,70 @@ class MockApiService implements ApiService {
     if (endpoint == '/auth/google' || endpoint == '/api/auth/google') {
       return {'success': true, 'token': 'mock_google_token'};
     }
+    if (endpoint == '/api/invitations/validate' ||
+        endpoint == '/api/org/invitations/validate' ||
+        endpoint == '/api/auth/invitation/validate') {
+      final code = (data['invitationCode'] ?? '').toString().trim();
+      final isValid = _validInviteCodes.contains(code);
+      return {
+        'success': isValid,
+        'isValid': isValid,
+        'organizationId': isValid ? 'org_001' : null,
+      };
+    }
     if (endpoint == '/login' ||
         endpoint == '/signup' ||
-        endpoint == '/api/auth/login' ||
+        endpoint == '/api/auth/login') {
+      final email = (data['email'] ?? '').toString().trim().toLowerCase();
+      final isManager = email.contains('manager');
+      return {
+        'success': true,
+        'token': 'mock_token',
+        'user': {
+          'id': isManager ? 'm_01' : 'e_01',
+          'email': email,
+          'role': isManager ? 'manager' : 'employee',
+          'organizationId': 'org_001',
+        },
+      };
+    }
+    if (endpoint == '/api/auth/register/manager' ||
         endpoint == '/api/auth/register') {
-      return {'success': true, 'token': 'mock_token'};
+      return {
+        'success': true,
+        'token': 'mock_manager_token',
+        'user': {
+          'id': 'm_${DateTime.now().millisecondsSinceEpoch}',
+          'email': data['email'],
+          'role': 'manager',
+          'organizationId': 'org_001',
+        },
+      };
+    }
+    if (endpoint == '/api/auth/register/employee' ||
+        endpoint == '/api/auth/register/invited-employee') {
+      final code = (data['invitationCode'] ?? '').toString().trim();
+      if (!_validInviteCodes.contains(code)) {
+        throw Exception('Invitation code is invalid');
+      }
+
+      final email = (data['email'] ?? '').toString().trim().toLowerCase();
+      _organizationEmployeeEmails.add(email);
+      return {
+        'success': true,
+        'token': 'mock_employee_token',
+        'user': {
+          'id': 'e_${DateTime.now().millisecondsSinceEpoch}',
+          'email': data['email'],
+          'role': 'employee',
+          'organizationId': 'org_001',
+        },
+      };
+    }
+    if (endpoint == '/signup') {
+      throw Exception(
+        'Employee self-signup is disabled. Employees must use invitation flow.',
+      );
     }
     if (endpoint == '/forgot-password' ||
         endpoint == '/logout' ||

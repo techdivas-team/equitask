@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'api_services.dart'; // Make sure this import is correct (singular)
-// import 'http_api_service.dart';       // Comment out for mock preview
-import 'mock_api_service.dart'; // Add mock service import
-import 'task_service.dart';
+import 'api_services.dart';
 import 'auth_service.dart';
+import 'mock_api_service.dart';
 import 'notification_service.dart';
+import 'session_service.dart';
+import 'task_service.dart';
+import 'team_service.dart';
 import 'user_service.dart';
-// import '../constants.dart';            // Not needed for mock
 
 class ServiceProvider extends StatelessWidget {
   final Widget child;
@@ -18,16 +18,15 @@ class ServiceProvider extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Use MockApiService for preview – comment out HttpApiService
-        Provider<ApiService>(
-          create: (_) => MockApiService(), // Temporarily using mock
+        ChangeNotifierProvider<SessionService>(
+          create: (_) => SessionService(),
         ),
-        // The original HttpApiService is commented out below
-        // Provider<ApiService>(
-        //   create: (_) => HttpApiService(baseUrl: apiBaseUrl),
-        // ),
-
-        // Other providers remain unchanged
+        ChangeNotifierProvider<TeamService>(
+          create: (_) => TeamService(),
+        ),
+        Provider<ApiService>(
+          create: (_) => MockApiService(),
+        ),
         ProxyProvider<ApiService, TaskService>(
           update: (_, api, __) => TaskService(api),
         ),

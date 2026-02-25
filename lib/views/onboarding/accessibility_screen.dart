@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'widgets/selectable_card.dart';
 import '../employee/dashboard_screen.dart';
+import '../manager/manager_dashboard_screen.dart';
 
 class AccessibilityScreen extends StatefulWidget {
-  const AccessibilityScreen({super.key});
+  final String selectedRole;
+
+  const AccessibilityScreen({super.key, this.selectedRole = 'employee'});
 
   @override
   State<AccessibilityScreen> createState() => _AccessibilityScreenState();
@@ -103,10 +106,12 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const DashboardScreen(),
+                            builder: (context) => widget.selectedRole == 'manager'
+                                ? const ManagerDashboardScreen()
+                                : const DashboardScreen(),
                           ),
                         );
                       },

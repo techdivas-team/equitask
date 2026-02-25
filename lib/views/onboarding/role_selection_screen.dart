@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../services/session_service.dart';
 import 'widgets/selectable_card.dart';
 import 'accessibility_screen.dart';
 
@@ -33,9 +35,18 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 style: TextStyle(color: Colors.grey, fontSize: 16),
               ),
               const SizedBox(height: 30),
-              const Text(
-                "Select Your Role",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              Consumer<SessionService>(
+                builder: (_, session, __) {
+                  return Text(
+                    session.accountMode == AccountMode.organization
+                        ? "Select Your Role in Organization"
+                        : "Select Your Role",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 20),
               Expanded(
@@ -45,7 +56,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       SelectableCard(
                         title: "Employee",
                         description:
-                            "Manage your tasks with AI assistance and accessibility features",
+                            "Join your manager's organization using an invitation code",
                         icon: Icons.person_outline,
                         isSelected: selectedRole == "employee",
                         onTap: () {
@@ -57,7 +68,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       SelectableCard(
                         title: "Manager",
                         description:
-                            "Assign tasks and review employee submissions with verification tools",
+                            "Create and manage organization workspace, teams, and invitations",
                         icon: Icons.supervisor_account_outlined,
                         isSelected: selectedRole == "manager",
                         onTap: () {
@@ -76,13 +87,26 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   onPressed: selectedRole == null
                       ? null
                       : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AccessibilityScreen(),
-                            ),
-                          );
-                        },
+                        final session = Provider.of<SessionService>(
+                          context,
+                          listen: false,
+                        );
+                        final isOrg =
+                            session.accountMode == AccountMode.organization;
+                        if (isOrg &&
+                            selectedRole == 'employee' &&
+                            !session.hasValidInvite) {
+                          Navigator.pushNamed(context, '/signup/invite-employee');
+                          return;
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                AccessibilityScreen(selectedRole: selectedRole!),
+                          ),
+                        );
+                      },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

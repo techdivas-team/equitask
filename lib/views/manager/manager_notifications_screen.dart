@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import '../employee/widgets/support_fab_stack.dart';
 import '../shared/notifications_content.dart';
-import 'employee_drawer.dart';
-import 'widgets/employee_top_bar.dart';
-import 'widgets/support_fab_stack.dart';
+import 'manager_drawer.dart';
+import 'widgets/manager_top_bar.dart';
 
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
+class ManagerNotificationsScreen extends StatelessWidget {
+  const ManagerNotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F5F7),
-      appBar: const EmployeeTopBar(currentRoute: '/notifications'),
-      drawer: const EmployeeDrawer(currentRoute: '/notifications'),
+      appBar: const ManagerTopBar(currentRoute: '/manager/notifications'),
+      drawer: const ManagerDrawer(currentRoute: '/manager/notifications'),
       floatingActionButton: const SupportFabStack(showClipboard: true),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: const NotificationsContent(),

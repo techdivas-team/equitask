@@ -18,11 +18,11 @@ class TaskCard extends StatelessWidget {
   Color _getPriorityColor(TaskPriority priority) {
     switch (priority) {
       case TaskPriority.urgent:
-        return Colors.red;
+        return const Color(0xFFDF3F3F);
       case TaskPriority.important:
-        return Colors.orange;
+        return const Color(0xFFE3B71B);
       case TaskPriority.normal:
-        return Colors.blue;
+        return const Color(0xFF19B889);
     }
   }
 
@@ -40,106 +40,146 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final priorityColor = _getPriorityColor(task.priority);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    final statusDotColor = priorityColor;
+    return Stack(
+      children: [
+        Positioned(
+          left: 0,
+          top: 10,
+          bottom: 10,
+          child: Container(
+            width: 4,
+            decoration: BoxDecoration(
+              color: priorityColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFD8DDE6)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  task.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        height: 1.1,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF15283B),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: statusDotColor,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 15,
+                    color: Colors.grey.shade700,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Due ${_formatDate(task.dueDate)}',
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: priorityColor, width: 1.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      _getPriorityLabel(task.priority),
+                      style: TextStyle(
+                        color: priorityColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                task.description,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.25,
+                  color: Color(0xFF6B7280),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: priorityColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFE6F1ED),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  _getPriorityLabel(task.priority),
-                  style: TextStyle(
-                    color: priorityColor,
+                  task.status,
+                  style: const TextStyle(
+                    color: Color(0xFF2A3D3A),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Due ${_formatDate(task.dueDate)}',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            task.description,
-            style: const TextStyle(fontSize: 14),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              task.status,
-              style: TextStyle(
-                color: Colors.orange.shade800,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
+              const SizedBox(height: 16),
               _buildActionButton(
-                icon: Icons.auto_awesome,
+                icon: Icons.auto_awesome_outlined,
                 label: 'Simplify with AI',
                 onPressed: onSimplify,
               ),
-              Container(width: 1, height: 24, color: Colors.grey.shade300),
+              const SizedBox(height: 10),
               _buildActionButton(
                 icon: Icons.center_focus_strong,
                 label: 'Focus Mode',
                 onPressed: onFocusMode,
               ),
-              Container(width: 1, height: 24, color: Colors.grey.shade300),
+              const SizedBox(height: 10),
               _buildActionButton(
-                icon: Icons.upload_file,
+                icon: Icons.upload_outlined,
                 label: 'Submit Proof',
                 onPressed: onSubmitProof,
+                isPrimary: true,
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -147,23 +187,31 @@ class TaskCard extends StatelessWidget {
     required IconData icon,
     required String label,
     required VoidCallback? onPressed,
+    bool isPrimary = false,
   }) {
-    return Expanded(
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              Icon(icon, size: 20, color: Colors.blue),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: const TextStyle(fontSize: 10, color: Colors.blue),
-                textAlign: TextAlign.center,
-              ),
-            ],
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(
+            color: isPrimary ? const Color(0xFF2F80ED) : const Color(0xFFD1D5DB),
+          ),
+          backgroundColor: isPrimary ? const Color(0xFF2F80ED) : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        icon: Icon(
+          icon,
+          size: 18,
+          color: isPrimary ? Colors.white : const Color(0xFF1F2937),
+        ),
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: isPrimary ? Colors.white : const Color(0xFF1F2937),
           ),
         ),
       ),

@@ -23,6 +23,7 @@ class Task {
     final rawPriority = (json['priority'] ?? json['urgencyColor'] ?? 'normal')
         .toString();
     final rawDueDate = json['dueDate']?.toString();
+    final rawStatus = (json['status'] ?? 'Pending').toString();
 
     return Task(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
@@ -32,7 +33,7 @@ class Task {
           ? DateTime.tryParse(rawDueDate) ?? DateTime.now()
           : DateTime.now(),
       priority: _priorityFromString(rawPriority),
-      status: (json['status'] ?? 'Pending').toString(),
+      status: _normalizeStatus(rawStatus),
       isActive: (json['isActive'] as bool?) ?? true,
     );
   }
@@ -40,12 +41,28 @@ class Task {
   static TaskPriority _priorityFromString(String priority) {
     switch (priority.toLowerCase()) {
       case 'urgent':
+      case 'red':
         return TaskPriority.urgent;
       case 'important':
+      case 'yellow':
+      case 'orange':
         return TaskPriority.important;
+      case 'green':
       default:
         return TaskPriority.normal;
     }
+  }
+
+  static String _normalizeStatus(String status) {
+    return status
+        .replaceAll('_', ' ')
+        .split(' ')
+        .where((word) => word.isNotEmpty)
+        .map(
+          (word) =>
+              '${word[0].toUpperCase()}${word.length > 1 ? word.substring(1).toLowerCase() : ''}',
+        )
+        .join(' ');
   }
 
   Map<String, dynamic> toJson() {

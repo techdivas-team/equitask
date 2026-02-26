@@ -17,18 +17,21 @@ class AuthService {
   AuthService(this._apiService);
 
   void _captureUser(Map<String, dynamic> response, {String? fallbackEmail}) {
-    final user = response['user'];
+    final payload = response['data'] is Map<String, dynamic>
+        ? response['data'] as Map<String, dynamic>
+        : response;
+    final user = payload['user'] ?? response['user'];
     if (user is Map) {
       final role = (user['role'] ?? '').toString().toLowerCase();
       _lastRole = role == 'employee' ? AppRole.employee : AppRole.manager;
       _lastOrganizationId = user['organizationId']?.toString();
       _lastEmail = user['email']?.toString() ?? fallbackEmail;
-      _lastToken = response['token']?.toString();
+      _lastToken = (payload['token'] ?? response['token'])?.toString();
       return;
     }
     _lastRole = AppRole.manager;
     _lastEmail = fallbackEmail;
-    _lastToken = response['token']?.toString();
+    _lastToken = (payload['token'] ?? response['token'])?.toString();
   }
 
   Future<Map<String, dynamic>> _postWithFallback(
@@ -57,8 +60,9 @@ class AuthService {
       'password': password,
     });
     _captureUser(response, fallbackEmail: email);
-    if (response['token'] != null && _apiService is HttpApiService) {
-      _apiService.setAuthToken(response['token'].toString());
+    final token = _lastToken;
+    if (token != null && token.isNotEmpty && _apiService is HttpApiService) {
+      _apiService.setAuthToken(token);
     }
     return response['success'] == true;
   }
@@ -73,18 +77,20 @@ class AuthService {
     required String password,
   }) async {
     final response = await _postWithFallback([
+      '/api/auth/signup',
       '/api/auth/register/manager',
       '/api/auth/register',
-      '/api/auth/signup',
       '/auth/register',
     ], {
       'name': name,
       'email': email,
       'password': password,
+      'role': 'manager',
     });
     _captureUser(response, fallbackEmail: email);
-    if (response['token'] != null && _apiService is HttpApiService) {
-      _apiService.setAuthToken(response['token'].toString());
+    final token = _lastToken;
+    if (token != null && token.isNotEmpty && _apiService is HttpApiService) {
+      _apiService.setAuthToken(token);
     }
     return response['success'] == true;
   }
@@ -115,10 +121,12 @@ class AuthService {
       'email': email,
       'password': password,
       'invitationCode': invitationCode,
+      'role': 'employee',
     });
     _captureUser(response, fallbackEmail: email);
-    if (response['token'] != null && _apiService is HttpApiService) {
-      _apiService.setAuthToken(response['token'].toString());
+    final token = _lastToken;
+    if (token != null && token.isNotEmpty && _apiService is HttpApiService) {
+      _apiService.setAuthToken(token);
     }
     return response['success'] == true;
   }

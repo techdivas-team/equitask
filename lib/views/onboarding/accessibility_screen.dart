@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../services/session_service.dart';
 import 'widgets/selectable_card.dart';
 import '../employee/dashboard_screen.dart';
+import '../employee/task_screen.dart';
 import '../manager/manager_dashboard_screen.dart';
 
 class AccessibilityScreen extends StatefulWidget {
@@ -106,12 +109,23 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
+                        final session = Provider.of<SessionService>(
+                          context,
+                          listen: false,
+                        );
+                        final isIndividual =
+                            session.accountMode == AccountMode.individual;
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => widget.selectedRole == 'manager'
-                                ? const ManagerDashboardScreen()
-                                : const DashboardScreen(),
+                            builder: (context) {
+                              if (isIndividual) {
+                                return const TasksScreen();
+                              }
+                              return widget.selectedRole == 'manager'
+                                  ? const ManagerDashboardScreen()
+                                  : const DashboardScreen();
+                            },
                           ),
                         );
                       },

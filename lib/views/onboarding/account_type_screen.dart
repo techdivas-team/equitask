@@ -12,6 +12,15 @@ class AccountTypeScreen extends StatefulWidget {
 
 class _AccountTypeScreenState extends State<AccountTypeScreen> {
   AccountMode? _selectedMode = AccountMode.organization;
+  bool _initializedSelection = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initializedSelection) return;
+    _selectedMode = Provider.of<SessionService>(context, listen: false).accountMode;
+    _initializedSelection = true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +38,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                "Organization mode is enabled now. Individual mode can be added next.",
+                "Choose how you want to use EquiTask AI.",
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey, fontSize: 15),
               ),
@@ -45,19 +54,13 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                 },
               ),
               SelectableCard(
-                title: "Individual (Coming Soon)",
+                title: "Individual",
                 description:
                     "Personal task workspace without an organization structure.",
                 icon: Icons.person_outline,
                 isSelected: _selectedMode == AccountMode.individual,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Individual mode is not enabled yet. Use Organization mode.',
-                      ),
-                    ),
-                  );
+                  setState(() => _selectedMode = AccountMode.individual);
                 },
               ),
               const Spacer(),
@@ -65,11 +68,12 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    if (_selectedMode == null) return;
                     final session = Provider.of<SessionService>(
                       context,
                       listen: false,
                     );
-                    session.selectAccountMode(AccountMode.organization);
+                    session.selectAccountMode(_selectedMode!);
                     Navigator.pushNamed(context, '/onboarding/role');
                   },
                   style: ElevatedButton.styleFrom(

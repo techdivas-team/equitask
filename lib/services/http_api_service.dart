@@ -8,6 +8,7 @@ class HttpApiService implements ApiService {
   String? _authToken;
 
   HttpApiService({required this.baseUrl});
+  String? get authToken => _authToken;
 
   void setAuthToken(String token) {
     _authToken = token;

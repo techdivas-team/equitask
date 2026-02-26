@@ -1,6 +1,14 @@
 import 'api_services.dart';
 import 'http_api_service.dart';
 import 'session_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+const String _googleWebClientId = String.fromEnvironment(
+  'GOOGLE_WEB_CLIENT_ID',
+  defaultValue:
+      '995530463322-fqr9iqdk5mrf4lsbdua3bfqabbh2vi3k.apps.googleusercontent.com',
+);
 
 class AuthService {
   final ApiService _apiService;
@@ -16,6 +24,31 @@ class AuthService {
 
   AuthService(this._apiService);
 
+  bool _isAuthSuccess(Map<String, dynamic> response) {
+    final payload = response['data'] is Map<String, dynamic>
+        ? response['data'] as Map<String, dynamic>
+        : response;
+    if (response['success'] == true || payload['success'] == true) {
+      return true;
+    }
+    return _extractToken(response) != null ||
+        payload['user'] != null ||
+        response['user'] != null;
+  }
+
+  String? _extractToken(Map<String, dynamic> response) {
+    final payload = response['data'] is Map<String, dynamic>
+        ? response['data'] as Map<String, dynamic>
+        : response;
+    return (payload['token'] ??
+            response['token'] ??
+            payload['accessToken'] ??
+            response['accessToken'] ??
+            payload['authToken'] ??
+            response['authToken'])
+        ?.toString();
+  }
+
   void _captureUser(Map<String, dynamic> response, {String? fallbackEmail}) {
     final payload = response['data'] is Map<String, dynamic>
         ? response['data'] as Map<String, dynamic>
@@ -26,12 +59,12 @@ class AuthService {
       _lastRole = role == 'employee' ? AppRole.employee : AppRole.manager;
       _lastOrganizationId = user['organizationId']?.toString();
       _lastEmail = user['email']?.toString() ?? fallbackEmail;
-      _lastToken = (payload['token'] ?? response['token'])?.toString();
+      _lastToken = _extractToken(response);
       return;
     }
     _lastRole = AppRole.manager;
     _lastEmail = fallbackEmail;
-    _lastToken = (payload['token'] ?? response['token'])?.toString();
+    _lastToken = _extractToken(response);
   }
 
   Future<Map<String, dynamic>> _postWithFallback(
@@ -54,8 +87,29 @@ class AuthService {
     );
   }
 
+  Future<Map<String, dynamic>> _postWithEndpointAndBodyFallback(
+    List<String> endpoints,
+    List<Map<String, dynamic>> bodies,
+  ) async {
+    Exception? lastError;
+    for (final body in bodies) {
+      for (final endpoint in endpoints) {
+        try {
+          return await _apiService.post(endpoint, body);
+        } on Exception catch (e) {
+          lastError = e;
+        }
+      }
+    }
+    throw Exception(lastError?.toString() ?? 'Request failed');
+  }
+
   Future<bool> login(String email, String password) async {
-    final response = await _apiService.post('/api/auth/login', {
+    final response = await _postWithFallback([
+      '/api/auth/login',
+      '/api/login',
+      '/auth/login',
+    ], {
       'email': email,
       'password': password,
     });
@@ -64,7 +118,7 @@ class AuthService {
     if (token != null && token.isNotEmpty && _apiService is HttpApiService) {
       _apiService.setAuthToken(token);
     }
-    return response['success'] == true;
+    return _isAuthSuccess(response);
   }
 
   Future<bool> signup(String name, String email, String password) async {
@@ -76,33 +130,54 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final response = await _postWithFallback([
-      '/api/auth/signup',
-      '/api/auth/register/manager',
-      '/api/auth/register',
-      '/auth/register',
-    ], {
-      'name': name,
-      'email': email,
-      'password': password,
-      'role': 'manager',
-    });
+    final response = await _postWithEndpointAndBodyFallback(
+      [
+        '/api/auth/signup',
+        '/api/auth/register',
+        '/api/auth/register/manager',
+        '/api/register',
+        '/auth/register',
+      ],
+      [
+        {
+          'fullName': name,
+          'name': name,
+          'email': email,
+          'password': password,
+          'role': 'user',
+        },
+        {
+          'fullName': name,
+          'name': name,
+          'email': email,
+          'password': password,
+          'role': 'manager',
+        },
+        {
+          'fullName': name,
+          'name': name,
+          'email': email,
+          'password': password,
+        },
+      ],
+    );
     _captureUser(response, fallbackEmail: email);
     final token = _lastToken;
     if (token != null && token.isNotEmpty && _apiService is HttpApiService) {
       _apiService.setAuthToken(token);
     }
-    return response['success'] == true;
+    return _isAuthSuccess(response);
   }
 
   Future<bool> validateInvitationCode(String invitationCode) async {
-    final response = await _postWithFallback([
-      '/api/invitations/validate',
-      '/api/org/invitations/validate',
-      '/api/auth/invitation/validate',
-    ], {
-      'invitationCode': invitationCode,
-    });
+    final response = await _postWithFallback(
+      [
+        '/api/invitations/validate',
+        '/api/org/invitations/validate',
+        '/api/auth/invitation/validate',
+      ],
+      {'invitationCode': invitationCode},
+    );
     return response['success'] == true && response['isValid'] != false;
   }
 
@@ -112,56 +187,112 @@ class AuthService {
     required String password,
     required String invitationCode,
   }) async {
-    final response = await _postWithFallback([
-      '/api/auth/register/employee',
-      '/api/auth/register/invited-employee',
-      '/api/auth/register',
-    ], {
-      'name': name,
-      'email': email,
-      'password': password,
-      'invitationCode': invitationCode,
-      'role': 'employee',
-    });
+    final response = await _postWithFallback(
+      [
+        '/api/auth/register/employee',
+        '/api/auth/register/invited-employee',
+        '/api/auth/register',
+      ],
+      {
+        'name': name,
+        'fullName': name,
+        'email': email,
+        'password': password,
+        'invitationCode': invitationCode,
+        'inviteCode': invitationCode,
+        'role': 'employee',
+      },
+    );
     _captureUser(response, fallbackEmail: email);
     final token = _lastToken;
     if (token != null && token.isNotEmpty && _apiService is HttpApiService) {
       _apiService.setAuthToken(token);
     }
-    return response['success'] == true;
+    return _isAuthSuccess(response);
   }
 
   Future<bool> signInWithGoogle() async {
-    final response = await _apiService.post('/api/auth/google', {
-      'mode': 'signin',
-    });
-    if (response['token'] != null && _apiService is HttpApiService) {
-      _apiService.setAuthToken(response['token'].toString());
-    }
-    return response['success'] == true;
+    return _authenticateWithGoogle(mode: 'signin');
   }
 
   Future<bool> signUpWithGoogle() async {
-    final response = await _apiService.post('/api/auth/google', {
-      'mode': 'signup',
-    });
-    if (response['token'] != null && _apiService is HttpApiService) {
-      _apiService.setAuthToken(response['token'].toString());
+    return _authenticateWithGoogle(mode: 'signup');
+  }
+
+  Future<bool> _authenticateWithGoogle({required String mode}) async {
+    final googleSignIn = GoogleSignIn(
+      scopes: const ['email', 'profile'],
+      serverClientId: _googleWebClientId.isEmpty ? null : _googleWebClientId,
+    );
+
+    final account = await googleSignIn.signIn();
+    if (account == null) {
+      return false;
     }
-    return response['success'] == true;
+
+    final authentication = await account.authentication;
+    final idToken = authentication.idToken;
+    if (kDebugMode) {
+      debugPrint(
+        'Google ID token available: ${idToken != null && idToken.isNotEmpty}',
+      );
+    }
+    if (idToken == null || idToken.isEmpty) {
+      throw Exception(
+        'Google ID token not available. Set GOOGLE_WEB_CLIENT_ID and verify app OAuth setup.',
+      );
+    }
+
+    final response = await _apiService.post('/api/auth/google', {
+      'mode': mode,
+      'idToken': idToken,
+      'email': account.email,
+      'name': account.displayName,
+    });
+
+    _captureUser(response, fallbackEmail: account.email);
+    final token = _lastToken;
+    if (token != null && token.isNotEmpty && _apiService is HttpApiService) {
+      _apiService.setAuthToken(token);
+    }
+    return _isAuthSuccess(response);
   }
 
   Future<bool> forgotPassword(String email) async {
-    final response = await _apiService.post('/api/auth/forgot-password', {
+    final response = await _postWithFallback([
+      '/api/auth/forgot-password',
+      '/api/forgot-password',
+      '/auth/forgot-password',
+    ], {
       'email': email,
     });
     return response['success'] == true;
   }
 
   Future<void> logout() async {
+    Exception? lastError;
+    for (final endpoint in [
+      '/api/auth/logout',
+      '/api/logout',
+      '/auth/logout',
+    ]) {
+      try {
+        await _apiService.post(endpoint, {});
+        break;
+      } on Exception catch (e) {
+        lastError = e;
+      }
+    }
+
     if (_apiService is HttpApiService) {
       _apiService.clearAuthToken();
     }
-    await _apiService.post('/api/auth/logout', {});
+    _lastToken = null;
+    _lastEmail = null;
+    _lastOrganizationId = null;
+    _lastRole = AppRole.manager;
+    if (lastError != null && kDebugMode) {
+      debugPrint('Logout endpoint warning: $lastError');
+    }
   }
 }

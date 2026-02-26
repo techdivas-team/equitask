@@ -33,11 +33,16 @@ class ManagerDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               _item(context, Icons.home_outlined, 'Dashboard', '/manager/dashboard'),
-              _item(context, Icons.fact_check_outlined, 'Verification Center', '/manager/verification'),
-              _item(context, Icons.add, 'Create Task', '/manager/create-task'),
-              _item(context, Icons.groups_2_outlined, 'Team', '/manager/team'),
-              _item(context, Icons.bar_chart_outlined, 'Analytics', '/manager/analytics'),
-              _item(context, Icons.notifications_none_outlined, 'Notifications', '/manager/notifications'),
+              if (isPersonal) ...[
+                _item(context, Icons.playlist_add_check_circle_outlined, 'My Tasks', '/tasks'),
+                _item(context, Icons.person_add_alt_1_outlined, 'Invite Member', '/manager/team'),
+              ] else ...[
+                _item(context, Icons.fact_check_outlined, 'Verification Center', '/manager/verification'),
+                _item(context, Icons.add, 'Create Task', '/manager/create-task'),
+                _item(context, Icons.groups_2_outlined, 'Team', '/manager/team'),
+                _item(context, Icons.bar_chart_outlined, 'Analytics', '/manager/analytics'),
+                _item(context, Icons.notifications_none_outlined, 'Notifications', '/manager/notifications'),
+              ],
               _item(context, Icons.account_circle_outlined, 'Profile', '/manager/profile'),
               _item(context, Icons.settings_outlined, 'Settings', '/manager/settings'),
               const Spacer(),
@@ -46,7 +51,11 @@ class ManagerDrawer extends StatelessWidget {
                 leading: const Icon(Icons.logout, color: Color(0xFFE2E8F0)),
                 title: const Text('Logout', style: TextStyle(color: Color(0xFFE2E8F0))),
                 onTap: () async {
-                  await authService.logout();
+                  try {
+                    await authService.logout();
+                  } catch (_) {}
+                  if (!context.mounted) return;
+                  session.clearSession();
                   if (!context.mounted) return;
                   Navigator.pushReplacementNamed(context, '/login');
                 },

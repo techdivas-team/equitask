@@ -5,8 +5,23 @@ class NotificationService {
   final ApiService _apiService;
   NotificationService(this._apiService);
 
+  Future<Map<String, dynamic>> _getWithFallback(List<String> endpoints) async {
+    Exception? lastError;
+    for (final endpoint in endpoints) {
+      try {
+        return await _apiService.get(endpoint);
+      } on Exception catch (e) {
+        lastError = e;
+      }
+    }
+    throw Exception(lastError?.toString() ?? 'Notification fetch failed');
+  }
+
   Future<List<AppNotification>> getNotifications() async {
-    final response = await _apiService.get('/notifications');
+    final response = await _getWithFallback([
+      '/api/notifications',
+      '/notifications',
+    ]);
     final notifications = (response['notifications'] as List<dynamic>? ?? []);
     return notifications
         .map((item) => AppNotification.fromJson(item as Map<String, dynamic>))
@@ -14,6 +29,18 @@ class NotificationService {
   }
 
   Future<void> markAllRead() async {
-    await _apiService.post('/notifications/mark-all-read', {});
+    try {
+      await _apiService.post('/api/notifications/mark-all-read', {});
+    } on Exception {
+      await _apiService.post('/notifications/mark-all-read', {});
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    try {
+      await _apiService.delete('/api/notifications/$id');
+    } on Exception {
+      await _apiService.delete('/notifications/$id');
+    }
   }
 }

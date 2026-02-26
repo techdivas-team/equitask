@@ -78,9 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, '/onboarding/account-type');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign in failed')),
+          const SnackBar(content: Text('Google sign in cancelled')),
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google sign in failed: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

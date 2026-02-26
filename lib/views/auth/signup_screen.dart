@@ -85,9 +85,14 @@ class _SignupScreenState extends State<SignupScreen> {
         Navigator.pushReplacementNamed(context, '/onboarding/account-type');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign up failed')),
+          const SnackBar(content: Text('Google sign up cancelled')),
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google sign up failed: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+import '../../models/task.dart';
 import '../../services/task_service.dart';
 import 'widgets/stats_card.dart';
 import 'widgets/task_card.dart';
@@ -17,8 +19,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late final TaskService _taskService;
   Map<String, dynamic>? _stats;
-  List? _recentTasks;
+  List<Task>? _recentTasks;
   bool _isLoading = true;
+  bool _isSimplifying = false;
 
   @override
   void didChangeDependencies() {
@@ -41,6 +44,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       // Show error dialog/snackbar
+    }
+  }
+
+  Future<void> _handleSimplifyTask(Task task) async {
+    if (_isSimplifying) return;
+    setState(() => _isSimplifying = true);
+    try {
+      final simplified = await _taskService.simplifyTaskDescription(
+        taskDescription: task.description,
+        level: 'simple',
+      );
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Simplified: ${task.title}'),
+          content: SingleChildScrollView(child: Text(simplified)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Simplify failed: $e')));
+    } finally {
+      if (mounted) setState(() => _isSimplifying = false);
+    }
+  }
+
+  Future<void> _handleSubmitProof(Task task) async {
+    final result = await FilePicker.platform.pickFiles(withData: true);
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.single;
+    try {
+      await _taskService.submitProofFile(
+        taskId: task.id,
+        fileName: file.name,
+        filePath: file.path,
+        fileBytes: file.bytes,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Proof uploaded for "${task.title}"')),
+      );
+      await _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Proof upload failed: $e')));
     }
   }
 
@@ -123,15 +183,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ..._recentTasks!.map(
                       (task) => TaskCard(
                         task: task,
-                        onSimplify: () {
-                          // TODO: implement AI simplify action
-                        },
+                        onSimplify: () => _handleSimplifyTask(task),
                         onFocusMode: () {
                           // TODO: implement focus mode
                         },
-                        onSubmitProof: () {
-                          // TODO: implement submit proof
-                        },
+                        onSubmitProof: () => _handleSubmitProof(task),
                       ),
                     ),
                 ],

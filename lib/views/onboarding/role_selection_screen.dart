@@ -15,6 +15,23 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   String? selectedRole;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final session = Provider.of<SessionService>(context, listen: false);
+    if (selectedRole != null) return;
+    if (session.accountMode == AccountMode.individual) {
+      selectedRole = 'individual';
+      return;
+    }
+    final currentRole = session.role;
+    if (currentRole == AppRole.manager) {
+      selectedRole = 'manager';
+    } else if (currentRole == AppRole.employee) {
+      selectedRole = 'employee';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -37,10 +54,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               const SizedBox(height: 30),
               Consumer<SessionService>(
                 builder: (_, session, __) {
+                  final isOrganization =
+                      session.accountMode == AccountMode.organization;
                   return Text(
-                    session.accountMode == AccountMode.organization
+                    isOrganization
                         ? "Select Your Role in Organization"
-                        : "Select Your Role",
+                        : "You are using Individual Mode",
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -50,35 +69,47 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      SelectableCard(
-                        title: "Employee",
-                        description:
-                            "Join your manager's organization using an invitation code",
-                        icon: Icons.person_outline,
-                        isSelected: selectedRole == "employee",
-                        onTap: () {
-                          setState(() {
-                            selectedRole = "employee";
-                          });
-                        },
+                child: Consumer<SessionService>(
+                  builder: (_, session, __) {
+                    final isOrganization =
+                        session.accountMode == AccountMode.organization;
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          if (isOrganization)
+                            SelectableCard(
+                              title: "Employee",
+                              description:
+                                  "Join your manager's organization using an invitation code",
+                              icon: Icons.person_outline,
+                              isSelected: selectedRole == "employee",
+                              onTap: () {
+                                setState(() {
+                                  selectedRole = "employee";
+                                });
+                              },
+                            ),
+                          SelectableCard(
+                            title: isOrganization ? "Manager" : "Individual",
+                            description: isOrganization
+                                ? "Create and manage organization workspace, teams, and invitations"
+                                : "Use your own workspace with manager-style navigation and tools",
+                            icon: isOrganization
+                                ? Icons.supervisor_account_outlined
+                                : Icons.person_outline,
+                            isSelected: selectedRole ==
+                                (isOrganization ? "manager" : "individual"),
+                            onTap: () {
+                              setState(() {
+                                selectedRole =
+                                    isOrganization ? "manager" : "individual";
+                              });
+                            },
+                          ),
+                        ],
                       ),
-                      SelectableCard(
-                        title: "Manager",
-                        description:
-                            "Create and manage organization workspace, teams, and invitations",
-                        icon: Icons.supervisor_account_outlined,
-                        isSelected: selectedRole == "manager",
-                        onTap: () {
-                          setState(() {
-                            selectedRole = "manager";
-                          });
-                        },
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
               SizedBox(
@@ -103,7 +134,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                AccessibilityScreen(selectedRole: selectedRole!),
+                                AccessibilityScreen(
+                                  selectedRole: selectedRole!,
+                                ),
                           ),
                         );
                       },

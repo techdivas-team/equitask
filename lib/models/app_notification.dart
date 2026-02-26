@@ -14,12 +14,15 @@ class AppNotification {
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
+    final rawTimestamp =
+        (json['timestamp'] ?? json['createdAt'] ?? DateTime.now().toIso8601String())
+            .toString();
     return AppNotification(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      message: json['message'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      isRead: json['isRead'] as bool,
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: (json['title'] ?? 'Notification').toString(),
+      message: (json['message'] ?? json['body'] ?? '').toString(),
+      timestamp: DateTime.tryParse(rawTimestamp) ?? DateTime.now(),
+      isRead: (json['isRead'] as bool?) ?? false,
     );
   }
 

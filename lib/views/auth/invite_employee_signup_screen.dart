@@ -19,6 +19,7 @@ class _InviteEmployeeSignupScreenState extends State<InviteEmployeeSignupScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -36,18 +37,21 @@ class _InviteEmployeeSignupScreenState extends State<InviteEmployeeSignupScreen>
       final authService = Provider.of<AuthService>(context, listen: false);
       final session = Provider.of<SessionService>(context, listen: false);
 
-      final validInvite = await authService.validateInvitationCode(
-        _inviteCodeController.text.trim(),
-      );
-      if (!validInvite) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid invitation code')),
+      // Some backends do not expose a dedicated invite-validation route.
+      // We try it but do not hard-block signup if this probe endpoint fails.
+      try {
+        final validInvite = await authService.validateInvitationCode(
+          _inviteCodeController.text.trim(),
         );
-        return;
-      }
-
-      session.setInviteState(isValid: true);
+        if (!validInvite) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid invitation code')),
+          );
+          return;
+        }
+        session.setInviteState(isValid: true);
+      } catch (_) {}
 
       final success = await authService.signupInvitedEmployee(
         name: _nameController.text.trim(),
@@ -134,7 +138,17 @@ class _InviteEmployeeSignupScreenState extends State<InviteEmployeeSignupScreen>
                 controller: _passwordController,
                 label: 'Password',
                 hint: 'Create password',
-                obscureText: true,
+                obscureText: _obscurePassword,
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() => _obscurePassword = !_obscurePassword);
+                  },
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ),
                 validator: (value) =>
                     value == null || value.length < 6
                         ? 'Minimum 6 characters'
@@ -161,6 +175,7 @@ class _InviteEmployeeSignupScreenState extends State<InviteEmployeeSignupScreen>
     required String? Function(String?) validator,
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
+    Widget? suffixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,6 +196,7 @@ class _InviteEmployeeSignupScreenState extends State<InviteEmployeeSignupScreen>
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
+            suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(

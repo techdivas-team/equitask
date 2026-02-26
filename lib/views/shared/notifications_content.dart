@@ -55,6 +55,18 @@ class _NotificationsContentState extends State<NotificationsContent> {
     });
   }
 
+  Future<void> _deleteNotification(AppNotification notification) async {
+    try {
+      await _notificationService.deleteNotification(notification.id);
+    } catch (_) {
+      // Keep optimistic UI behavior even if backend route is unavailable.
+    }
+    if (!mounted) return;
+    setState(() {
+      _notifications.removeWhere((n) => n.id == notification.id);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -144,7 +156,7 @@ class _NotificationsContentState extends State<NotificationsContent> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _formatDateTime(item.timestamp),
+                          _formatTimeLabel(item.timestamp),
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF9CA3AF),
@@ -152,6 +164,14 @@ class _NotificationsContentState extends State<NotificationsContent> {
                         ),
                       ],
                     ),
+                  ),
+                  IconButton(
+                    onPressed: () => _deleteNotification(item),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Color(0xFFDC2626),
+                    ),
+                    tooltip: 'Delete notification',
                   ),
                 ],
               ),
@@ -162,9 +182,16 @@ class _NotificationsContentState extends State<NotificationsContent> {
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    final d = dateTime.toLocal();
-    final minute = d.minute.toString().padLeft(2, '0');
-    return '${d.day}/${d.month}/${d.year} ${d.hour}:$minute';
+  String _formatTimeLabel(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+    final local = dateTime.toLocal();
+    final minute = local.minute.toString().padLeft(2, '0');
+
+    if (diff.inMinutes < 1) return 'Just now - ${local.hour}:$minute';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago - ${local.hour}:$minute';
+    if (diff.inHours < 24) return '${diff.inHours}h ago - ${local.hour}:$minute';
+    if (diff.inDays < 7) return '${diff.inDays}d ago - ${local.hour}:$minute';
+    return '${local.day}/${local.month}/${local.year} ${local.hour}:$minute';
   }
 }

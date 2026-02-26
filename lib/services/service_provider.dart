@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants.dart';
 import 'api_services.dart';
 import 'auth_service.dart';
-import 'mock_api_service.dart';
+import 'http_api_service.dart';
 import 'notification_service.dart';
 import 'session_service.dart';
 import 'task_service.dart';
@@ -25,7 +26,7 @@ class ServiceProvider extends StatelessWidget {
           create: (_) => TeamService(),
         ),
         Provider<ApiService>(
-          create: (_) => MockApiService(),
+          create: (_) => HttpApiService(baseUrl: apiBaseUrl),
         ),
         ProxyProvider<ApiService, TaskService>(
           update: (_, api, __) => TaskService(api),

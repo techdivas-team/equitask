@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
+import '../../services/session_service.dart';
 
 class EmployeeDrawer extends StatelessWidget {
   final String currentRoute;
@@ -10,6 +11,7 @@ class EmployeeDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final session = Provider.of<SessionService>(context, listen: false);
     return Drawer(
       backgroundColor: const Color(0xFF132B44),
       child: SafeArea(
@@ -76,7 +78,11 @@ class EmployeeDrawer extends StatelessWidget {
                   style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 16),
                 ),
                 onTap: () async {
-                  await authService.logout();
+                  try {
+                    await authService.logout();
+                  } catch (_) {}
+                  if (!context.mounted) return;
+                  session.clearSession();
                   if (!context.mounted) return;
                   Navigator.pushReplacementNamed(context, '/login');
                 },

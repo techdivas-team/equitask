@@ -169,7 +169,7 @@ router.post(["/register", "/signup"], async (req, res) => {
     const { fullName, email, password, role } = req.body;
     //normalize role
     const roleRaw = req.body.role;
-    const roleNormalized = (roleRaw || "reguler").toLowerCase();
+    const roleNormalized = (roleRaw || "regular").toLowerCase();
 
     const roleMap = {
       user: "regular",
@@ -257,7 +257,17 @@ if (finalRole === "employee") {
   }
 });
  
- 
+ // PUT /api/auth/me (Add this to fix 404)
+router.put("/me", protect, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.user._id, req.body, { new: true });
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Update failed" });
+  }
+});
+
+
  
 module.exports = router;
  

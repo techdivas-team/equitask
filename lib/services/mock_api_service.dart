@@ -76,7 +76,9 @@ class MockApiService implements ApiService {
   Map<String, dynamic> _taskStats() {
     final totalTasks = _tasks.length;
     final inProgress = _tasks
-        .where((task) => task['status'].toString().toLowerCase() == 'in progress')
+        .where(
+          (task) => task['status'].toString().toLowerCase() == 'in progress',
+        )
         .length;
     final completed = _tasks
         .where((task) => task['status'].toString().toLowerCase() == 'completed')
@@ -285,4 +287,17 @@ class MockApiService implements ApiService {
 
   @override
   Future<void> delete(String endpoint) async {}
+
+  @override
+  Future<Map<String, dynamic>> patch(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (endpoint.startsWith('/notifications/') && endpoint.endsWith('/read')) {
+      return {'success': true};
+    }
+    return {'success': true};
+  }
 }

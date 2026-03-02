@@ -12,6 +12,10 @@ class SessionService extends ChangeNotifier {
   AccountMode _accountMode = AccountMode.organization;
   String? _organizationId;
   bool _hasValidInvite = false;
+  bool _highContrastEnabled = false;
+  bool _largeTextEnabled = false;
+  bool _screenReaderAssistEnabled = false;
+  bool _onboardingCompleted = false;
 
   bool get isAuthenticated => _isAuthenticated;
   String? get token => _token;
@@ -20,6 +24,10 @@ class SessionService extends ChangeNotifier {
   AccountMode get accountMode => _accountMode;
   String? get organizationId => _organizationId;
   bool get hasValidInvite => _hasValidInvite;
+  bool get highContrastEnabled => _highContrastEnabled;
+  bool get largeTextEnabled => _largeTextEnabled;
+  bool get screenReaderAssistEnabled => _screenReaderAssistEnabled;
+  bool get onboardingCompleted => _onboardingCompleted;
 
   void selectAccountMode(AccountMode mode) {
     _accountMode = mode;
@@ -31,6 +39,17 @@ class SessionService extends ChangeNotifier {
     if (organizationId != null && organizationId.isNotEmpty) {
       _organizationId = organizationId;
     }
+    notifyListeners();
+  }
+
+  void setAccessibilityOptions({
+    required bool highContrast,
+    required bool largeText,
+    required bool screenReaderAssist,
+  }) {
+    _highContrastEnabled = highContrast;
+    _largeTextEnabled = largeText;
+    _screenReaderAssistEnabled = screenReaderAssist;
     notifyListeners();
   }
 
@@ -55,6 +74,14 @@ class SessionService extends ChangeNotifier {
     _role = null;
     _organizationId = null;
     _hasValidInvite = false;
+    _highContrastEnabled = false;
+    _largeTextEnabled = false;
+    _screenReaderAssistEnabled = false;
+    notifyListeners();
+  }
+
+  void completeOnboarding() {
+    _onboardingCompleted = true;
     notifyListeners();
   }
 }

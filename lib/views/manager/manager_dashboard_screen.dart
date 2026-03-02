@@ -17,9 +17,35 @@ class ManagerDashboardScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
         children: [
-          const Text(
-            'Manager Dashboard',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF15283B)),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Manager Dashboard',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF15283B),
+                  ),
+                ),
+              ),
+              Tooltip(
+                message: 'Create new task',
+                child: InkWell(
+                  onTap: () => Navigator.pushNamed(context, '/manager/create-task'),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2F80ED),
+                      borderRadius: BorderRadius.circular(17),
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           const Text(

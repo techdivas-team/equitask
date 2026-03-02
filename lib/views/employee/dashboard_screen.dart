@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/task.dart';
+import '../../services/session_service.dart';
 import '../../services/task_service.dart';
 import 'widgets/stats_card.dart';
 import 'widgets/task_card.dart';
@@ -106,8 +107,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isHighContrast = Provider.of<SessionService>(
+      context,
+    ).highContrastEnabled;
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F7),
+      backgroundColor: isHighContrast ? Colors.black : const Color(0xFFF3F5F7),
       appBar: const EmployeeTopBar(currentRoute: '/dashboard'),
       drawer: const EmployeeDrawer(currentRoute: '/dashboard'),
       floatingActionButton: const SupportFabStack(),
@@ -117,7 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           : RefreshIndicator(
               onRefresh: _loadData,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
                 children: [
                   StatsCard(
                     label: 'Total Tasks',
@@ -150,31 +154,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Your Tasks',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF15283B),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEAF4F0),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                      const Expanded(
                         child: Text(
-                          '${_stats?['activeTasks'] ?? 0} Active',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2B3A42),
+                          'Your Tasks',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF15283B),
                           ),
                         ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Tooltip(
+                            message: 'Create new task',
+                            child: InkWell(
+                              onTap: () => Navigator.pushNamed(context, '/tasks'),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2F80ED),
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF4F0),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${_stats?['activeTasks'] ?? 0} Active',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2B3A42),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -185,7 +217,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         task: task,
                         onSimplify: () => _handleSimplifyTask(task),
                         onFocusMode: () {
-                          // TODO: implement focus mode
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Focus mode is coming soon'),
+                            ),
+                          );
                         },
                         onSubmitProof: () => _handleSubmitProof(task),
                       ),

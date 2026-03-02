@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../services/session_service.dart';
 import 'widgets/selectable_card.dart';
 import '../employee/dashboard_screen.dart';
-import '../employee/task_screen.dart';
 import '../manager/manager_dashboard_screen.dart';
 
 class AccessibilityScreen extends StatefulWidget {
@@ -17,7 +16,7 @@ class AccessibilityScreen extends StatefulWidget {
 
 class _AccessibilityScreenState extends State<AccessibilityScreen> {
   int selectedIndex =
-      0; // 0: Standard, 1: High Contrast, 2: Large Text, 3: Simplified UI
+      0; // 0: Standard, 1: High Contrast, 2: Large Text, 3: Screen Reader Assist
 
   final List<Map<String, dynamic>> preferences = [
     {
@@ -38,9 +37,9 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
       'icon': Icons.text_fields,
     },
     {
-      'title': 'Simplified UI',
+      'title': 'Screen Reader Assist',
       'description': 'Reduced visual complexity with essential elements only',
-      'icon': Icons.dashboard_customize_outlined,
+      'icon': Icons.record_voice_over_outlined,
     },
   ];
 
@@ -113,6 +112,13 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                           context,
                           listen: false,
                         );
+                        session.setAccessibilityOptions(
+                          highContrast: selectedIndex == 1,
+                          largeText: selectedIndex == 2,
+                          screenReaderAssist: selectedIndex == 3,
+                        );
+                        // Mark onboarding as completed
+                        session.completeOnboarding();
                         final isIndividual =
                             session.accountMode == AccountMode.individual;
                         Navigator.pushReplacement(
@@ -120,7 +126,7 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
                           MaterialPageRoute(
                             builder: (context) {
                               if (isIndividual) {
-                                return const TasksScreen();
+                                return const DashboardScreen();
                               }
                               return widget.selectedRole == 'manager'
                                   ? const ManagerDashboardScreen()

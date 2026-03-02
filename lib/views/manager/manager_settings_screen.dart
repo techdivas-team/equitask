@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../services/session_service.dart';
 import '../../services/user_service.dart';
 import '../employee/widgets/support_fab_stack.dart';
 import 'manager_drawer.dart';
@@ -30,6 +31,12 @@ class _ManagerSettingsScreenState extends State<ManagerSettingsScreen> {
     try {
       final data = await _userService.getSettings();
       if (!mounted) return;
+      final session = Provider.of<SessionService>(context, listen: false);
+      session.setAccessibilityOptions(
+        highContrast: data['highContrast'] ?? false,
+        largeText: data['largeText'] ?? false,
+        screenReaderAssist: data['screenReaderAssist'] ?? false,
+      );
       setState(() {
         _settings = data;
         _isLoading = false;
@@ -43,16 +50,20 @@ class _ManagerSettingsScreenState extends State<ManagerSettingsScreen> {
   Future<void> _saveSettings() async {
     setState(() => _isSaving = true);
     try {
+      final session = Provider.of<SessionService>(context, listen: false);
+      _settings['highContrast'] = session.highContrastEnabled;
+      _settings['largeText'] = session.largeTextEnabled;
+      _settings['screenReaderAssist'] = session.screenReaderAssistEnabled;
       await _userService.updateSettings(_settings);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Settings saved')));
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to save settings')));
+      ).showSnackBar(SnackBar(content: Text('Failed to save settings: $e')));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -60,8 +71,10 @@ class _ManagerSettingsScreenState extends State<ManagerSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final session = Provider.of<SessionService>(context);
+    final isHighContrast = session.highContrastEnabled;
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F7),
+      backgroundColor: isHighContrast ? Colors.black : const Color(0xFFF3F5F7),
       appBar: const ManagerTopBar(currentRoute: '/manager/settings'),
       drawer: const ManagerDrawer(currentRoute: '/manager/settings'),
       floatingActionButton: const SupportFabStack(showClipboard: true),
@@ -85,19 +98,65 @@ class _ManagerSettingsScreenState extends State<ManagerSettingsScreen> {
                       setState(() => _settings['focusReminders'] = value),
                 ),
                 _switchTile(
-                  title: 'High Contrast',
-                  subtitle: 'Improve visual contrast for accessibility.',
-                  value: _settings['highContrast'] ?? false,
-                  onChanged: (value) =>
-                      setState(() => _settings['highContrast'] = value),
-                ),
-                _switchTile(
                   title: 'Reduce Motion',
                   subtitle: 'Limit animation and motion effects.',
                   value: _settings['reduceMotion'] ?? false,
                   onChanged: (value) =>
                       setState(() => _settings['reduceMotion'] = value),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Accessibility',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: isHighContrast ? Colors.white : Color(0xFF15283B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _switchTile(
+                  title: 'High Contrast Mode',
+                  subtitle: 'Use stronger contrast across screens.',
+                  value: session.highContrastEnabled,
+                  onChanged: (value) {
+                    setState(() => _settings['highContrast'] = value);
+                    session.setAccessibilityOptions(
+                      highContrast: value,
+                      largeText: session.largeTextEnabled,
+                      screenReaderAssist: session.screenReaderAssistEnabled,
+                    );
+                  },
+                ),
+                _switchTile(
+                  title: 'Large Text',
+                  subtitle: 'Increase text size for better readability.',
+                  value: session.largeTextEnabled,
+                  onChanged: (value) {
+                    setState(() => _settings['largeText'] = value);
+                    session.setAccessibilityOptions(
+                      highContrast: session.highContrastEnabled,
+                      largeText: value,
+                      screenReaderAssist: session.screenReaderAssistEnabled,
+                    );
+                  },
+                ),
+                _switchTile(
+                  title: 'Screen Reader Assist',
+                  subtitle: 'Improve spoken readability and text emphasis.',
+                  value: session.screenReaderAssistEnabled,
+                  onChanged: (value) {
+                    setState(() => _settings['screenReaderAssist'] = value);
+                    session.setAccessibilityOptions(
+                      highContrast: session.highContrastEnabled,
+                      largeText: session.largeTextEnabled,
+                      screenReaderAssist: value,
+                    );
+                  },
+                ),
+                if (isHighContrast) ...[
+                  const SizedBox(height: 8),
+                  _highContrastPaletteCard(),
+                ],
                 const SizedBox(height: 20),
                 SizedBox(
                   height: 48,
@@ -136,32 +195,67 @@ class _ManagerSettingsScreenState extends State<ManagerSettingsScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final isHighContrast = Provider.of<SessionService>(context, listen: false).highContrastEnabled;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isHighContrast ? Colors.black : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD8DDE6)),
+        border: Border.all(
+          color: isHighContrast ? const Color(0xFF00D9FF) : const Color(0xFFD8DDE6),
+        ),
       ),
       child: SwitchListTile(
         value: value,
         onChanged: onChanged,
-        activeThumbColor: const Color(0xFF2F80ED),
+        activeThumbColor: isHighContrast
+            ? const Color(0xFF00D9FF)
+            : const Color(0xFF2F80ED),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF15283B),
+            color: isHighContrast ? Colors.white : Color(0xFF15283B),
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
-            color: Color(0xFF6B7280),
+            color: isHighContrast
+                ? const Color(0xFFE5E7EB)
+                : const Color(0xFF6B7280),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _highContrastPaletteCard() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF00D9FF)),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'WCAG AAA High Contrast Palette',
+            style: TextStyle(
+              color: Color(0xFF00D9FF),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text('Primary: #00D9FF', style: TextStyle(color: Colors.white)),
+          Text('Secondary: #FFD700', style: TextStyle(color: Colors.white)),
+          Text('Success: #00FF7F', style: TextStyle(color: Colors.white)),
+          Text('Destructive: #FF3366', style: TextStyle(color: Colors.white)),
+        ],
       ),
     );
   }

@@ -10,7 +10,8 @@ class ManagerCreateTaskScreen extends StatefulWidget {
   const ManagerCreateTaskScreen({super.key});
 
   @override
-  State<ManagerCreateTaskScreen> createState() => _ManagerCreateTaskScreenState();
+  State<ManagerCreateTaskScreen> createState() =>
+      _ManagerCreateTaskScreenState();
 }
 
 class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
@@ -64,9 +65,9 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
   Future<void> _handleCreateTask() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDueDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a due date')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a due date')));
       return;
     }
 
@@ -82,17 +83,62 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Task created successfully')),
+        const SnackBar(
+          content: Text('Task created successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
-      Navigator.pushReplacementNamed(context, '/manager/analytics');
+      Navigator.pop(context); // Go back to previous screen
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to create task: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create task: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  void _handleAiGenerateMicroSteps() {
+    final source = _descriptionController.text.trim();
+    if (source.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Add a task description first, then tap AI Generate'),
+        ),
+      );
+      return;
+    }
+
+    final pieces = source
+        .split(RegExp(r'[.!?]'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .take(6)
+        .toList();
+
+    if (pieces.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not generate steps from text')),
+      );
+      return;
+    }
+
+    setState(() {
+      for (final controller in _microSteps) {
+        controller.dispose();
+      }
+      _microSteps
+        ..clear()
+        ..addAll(pieces.map((text) => TextEditingController(text: text)));
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Generated ${pieces.length} micro task steps')),
+    );
   }
 
   @override
@@ -106,13 +152,20 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
           children: [
             const Row(
               children: [
                 Icon(Icons.add, size: 38, color: Color(0xFF2F80ED)),
                 SizedBox(width: 6),
-                Text('Create New Task', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF15283B))),
+                Text(
+                  'Create New Task',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF15283B),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -131,9 +184,19 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Task Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF15283B))),
+                  const Text(
+                    'Task Details',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF15283B),
+                    ),
+                  ),
                   const SizedBox(height: 14),
-                  const Text('Task Title *', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Task Title *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _titleController,
@@ -148,7 +211,10 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text('Description *', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Description *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _descriptionController,
@@ -161,23 +227,39 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
                       return null;
                     },
                     decoration: const InputDecoration(
-                      hintText: 'Provide detailed instructions and context for this task...',
+                      hintText:
+                          'Provide detailed instructions and context for this task...',
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text('Priority Level *', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Priority Level *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: _priority,
                     items: const [
-                      DropdownMenuItem(value: 'High Priority', child: Text('High Priority')),
-                      DropdownMenuItem(value: 'Medium Priority', child: Text('Medium Priority')),
-                      DropdownMenuItem(value: 'Low Priority', child: Text('Low Priority')),
+                      DropdownMenuItem(
+                        value: 'High Priority',
+                        child: Text('High Priority'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Medium Priority',
+                        child: Text('Medium Priority'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Low Priority',
+                        child: Text('Low Priority'),
+                      ),
                     ],
                     onChanged: (value) => setState(() => _priority = value!),
                   ),
                   const SizedBox(height: 10),
-                  const Text('Due Date *', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Due Date *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 6),
                   TextFormField(
                     readOnly: true,
@@ -189,15 +271,30 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
                     onTap: _pickDueDate,
                   ),
                   const SizedBox(height: 10),
-                  const Text('Assign To', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text(
+                    'Assign To',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: _assignee,
                     items: const [
-                      DropdownMenuItem(value: 'Sarah Johnson', child: Text('Sarah Johnson')),
-                      DropdownMenuItem(value: 'Michael Chen', child: Text('Michael Chen')),
-                      DropdownMenuItem(value: 'Emily Rodriguez', child: Text('Emily Rodriguez')),
-                      DropdownMenuItem(value: 'David Kim', child: Text('David Kim')),
+                      DropdownMenuItem(
+                        value: 'Sarah Johnson',
+                        child: Text('Sarah Johnson'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Michael Chen',
+                        child: Text('Michael Chen'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Emily Rodriguez',
+                        child: Text('Emily Rodriguez'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'David Kim',
+                        child: Text('David Kim'),
+                      ),
                     ],
                     onChanged: (value) => setState(() => _assignee = value!),
                   ),
@@ -218,9 +315,20 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
                   Row(
                     children: [
                       const Expanded(
-                        child: Text('Micro Tasks\n(Optional)', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF15283B))),
+                        child: Text(
+                          'Micro Tasks\n(Optional)',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF15283B),
+                          ),
+                        ),
                       ),
-                      OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.auto_awesome_outlined), label: const Text('AI Generate')),
+                      OutlinedButton.icon(
+                        onPressed: _handleAiGenerateMicroSteps,
+                        icon: const Icon(Icons.auto_awesome_outlined),
+                        label: const Text('AI Generate'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -237,12 +345,28 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
                           Container(
                             width: 36,
                             height: 36,
-                            decoration: BoxDecoration(color: const Color(0xFFE8F3EE), borderRadius: BorderRadius.circular(8)),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F3EE),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             alignment: Alignment.center,
-                            child: Text('${i + 1}', style: const TextStyle(fontSize: 18, color: Color(0xFF1F2937))),
+                            child: Text(
+                              '${i + 1}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          Expanded(child: TextField(controller: _microSteps[i], decoration: InputDecoration(hintText: 'Step ${i + 1}...'))),
+                          Expanded(
+                            child: TextField(
+                              controller: _microSteps[i],
+                              decoration: InputDecoration(
+                                hintText: 'Step ${i + 1}...',
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -250,8 +374,9 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () =>
-                          setState(() => _microSteps.add(TextEditingController())),
+                      onPressed: () => setState(
+                        () => _microSteps.add(TextEditingController()),
+                      ),
                       child: const Text('+ Add Step'),
                     ),
                   ),
@@ -285,7 +410,9 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => Navigator.pop(context),
                     child: const Text('Cancel'),
                   ),
                 ),
@@ -293,7 +420,9 @@ class _ManagerCreateTaskScreenState extends State<ManagerCreateTaskScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _handleCreateTask,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2F80ED)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2F80ED),
+                    ),
                     child: _isSubmitting
                         ? const SizedBox(
                             width: 20,

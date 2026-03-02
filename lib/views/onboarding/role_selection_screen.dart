@@ -93,7 +93,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                             title: isOrganization ? "Manager" : "Individual",
                             description: isOrganization
                                 ? "Create and manage organization workspace, teams, and invitations"
-                                : "Use your own workspace with manager-style navigation and tools",
+                                : "Use your own workspace with personal dashboard and task tools",
                             icon: isOrganization
                                 ? Icons.supervisor_account_outlined
                                 : Icons.person_outline,

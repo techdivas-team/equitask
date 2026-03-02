@@ -36,6 +36,14 @@ class NotificationService {
     }
   }
 
+  Future<void> markAsRead(String id) async {
+    try {
+      await _apiService.patch('/api/notifications/$id/read', {'isRead': true});
+    } on Exception {
+      await _apiService.patch('/notifications/$id/read', {'isRead': true});
+    }
+  }
+
   Future<void> deleteNotification(String id) async {
     try {
       await _apiService.delete('/api/notifications/$id');

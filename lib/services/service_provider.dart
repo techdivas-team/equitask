@@ -19,14 +19,14 @@ class ServiceProvider extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<SessionService>(
-          create: (_) => SessionService(),
-        ),
-        ChangeNotifierProvider<TeamService>(
-          create: (_) => TeamService(),
-        ),
+        ChangeNotifierProvider<SessionService>(create: (_) => SessionService()),
+        // ApiService MUST be defined FIRST - all other services depend on it
         Provider<ApiService>(
           create: (_) => HttpApiService(baseUrl: apiBaseUrl),
+        ),
+        // Now these can safely depend on ApiService
+        ProxyProvider<ApiService, TeamService>(
+          update: (_, api, __) => TeamService(api),
         ),
         ProxyProvider<ApiService, TaskService>(
           update: (_, api, __) => TaskService(api),

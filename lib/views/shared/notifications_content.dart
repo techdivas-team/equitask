@@ -38,33 +38,51 @@ class _NotificationsContentState extends State<NotificationsContent> {
   }
 
   Future<void> _markAllRead() async {
-    await _notificationService.markAllRead();
-    if (!mounted) return;
-    setState(() {
-      _notifications = _notifications
-          .map(
-            (n) => AppNotification(
-              id: n.id,
-              title: n.title,
-              message: n.message,
-              timestamp: n.timestamp,
-              isRead: true,
-            ),
-          )
-          .toList();
-    });
+    try {
+      await _notificationService.markAllRead();
+      if (!mounted) return;
+      setState(() {
+        _notifications = _notifications
+            .map(
+              (n) => AppNotification(
+                id: n.id,
+                title: n.title,
+                message: n.message,
+                timestamp: n.timestamp,
+                isRead: true,
+              ),
+            )
+            .toList();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All notifications marked as read')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to mark notifications: $e')),
+      );
+    }
   }
 
   Future<void> _deleteNotification(AppNotification notification) async {
     try {
       await _notificationService.deleteNotification(notification.id);
-    } catch (_) {
+    } catch (e) {
       // Keep optimistic UI behavior even if backend route is unavailable.
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Delete sync warning: $e')));
+      }
     }
     if (!mounted) return;
     setState(() {
       _notifications.removeWhere((n) => n.id == notification.id);
     });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Notification removed')));
   }
 
   @override
@@ -72,34 +90,83 @@ class _NotificationsContentState extends State<NotificationsContent> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    // Show empty state when no notifications
+    if (_notifications.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.notifications_none_outlined,
+                size: 80,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'No Notifications Yet',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF15283B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'You\'re all caught up! Notifications about tasks, team updates, and more will appear here.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final unreadCount = _notifications.where((n) => !n.isRead).length;
     return RefreshIndicator(
       onRefresh: _loadNotifications,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
         children: [
-          Row(
-            children: [
-              const Text(
-                'Notifications',
-                style: TextStyle(
-                  color: Color(0xFF15283B),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '$unreadCount unread',
-                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
-              ),
-              const Spacer(),
-              OutlinedButton.icon(
-                onPressed: unreadCount == 0 ? null : _markAllRead,
-                icon: const Icon(Icons.done_all),
-                label: const Text('Mark All Read'),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 360;
+              return Row(
+                children: [
+                  const Text(
+                    'Notifications',
+                    style: TextStyle(
+                      color: Color(0xFF15283B),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '$unreadCount unread',
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const Spacer(),
+                  compact
+                      ? IconButton(
+                          onPressed: unreadCount == 0 ? null : _markAllRead,
+                          icon: const Icon(Icons.done_all),
+                          tooltip: 'Mark all read',
+                        )
+                      : OutlinedButton.icon(
+                          onPressed: unreadCount == 0 ? null : _markAllRead,
+                          icon: const Icon(Icons.done_all),
+                          label: const Text('Mark All Read'),
+                        ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
           ..._notifications.map((item) {
@@ -189,8 +256,10 @@ class _NotificationsContentState extends State<NotificationsContent> {
     final minute = local.minute.toString().padLeft(2, '0');
 
     if (diff.inMinutes < 1) return 'Just now - ${local.hour}:$minute';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago - ${local.hour}:$minute';
-    if (diff.inHours < 24) return '${diff.inHours}h ago - ${local.hour}:$minute';
+    if (diff.inMinutes < 60)
+      return '${diff.inMinutes}m ago - ${local.hour}:$minute';
+    if (diff.inHours < 24)
+      return '${diff.inHours}h ago - ${local.hour}:$minute';
     if (diff.inDays < 7) return '${diff.inDays}d ago - ${local.hour}:$minute';
     return '${local.day}/${local.month}/${local.year} ${local.hour}:$minute';
   }

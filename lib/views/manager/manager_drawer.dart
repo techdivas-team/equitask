@@ -13,6 +13,12 @@ class ManagerDrawer extends StatelessWidget {
     final authService = Provider.of<AuthService>(context, listen: false);
     final session = Provider.of<SessionService>(context);
     final isPersonal = session.accountMode == AccountMode.individual;
+    final dashboardRoute = isPersonal ? '/dashboard' : '/manager/dashboard';
+    final notificationsRoute = isPersonal
+        ? '/notifications'
+        : '/manager/notifications';
+    final profileRoute = isPersonal ? '/profile' : '/manager/profile';
+    final settingsRoute = isPersonal ? '/settings' : '/manager/settings';
     return Drawer(
       backgroundColor: const Color(0xFF132B44),
       child: SafeArea(
@@ -32,19 +38,19 @@ class ManagerDrawer extends StatelessWidget {
                 style: TextStyle(fontSize: 14, color: Color(0xFFB8C5D1)),
               ),
               const SizedBox(height: 18),
-              _item(context, Icons.home_outlined, 'Dashboard', '/manager/dashboard'),
+              _item(context, Icons.home_outlined, 'Dashboard', dashboardRoute),
               if (isPersonal) ...[
                 _item(context, Icons.playlist_add_check_circle_outlined, 'My Tasks', '/tasks'),
-                _item(context, Icons.person_add_alt_1_outlined, 'Invite Member', '/manager/team'),
+                _item(context, Icons.notifications_none_outlined, 'Notifications', notificationsRoute),
               ] else ...[
                 _item(context, Icons.fact_check_outlined, 'Verification Center', '/manager/verification'),
                 _item(context, Icons.add, 'Create Task', '/manager/create-task'),
                 _item(context, Icons.groups_2_outlined, 'Team', '/manager/team'),
                 _item(context, Icons.bar_chart_outlined, 'Analytics', '/manager/analytics'),
-                _item(context, Icons.notifications_none_outlined, 'Notifications', '/manager/notifications'),
+                _item(context, Icons.notifications_none_outlined, 'Notifications', notificationsRoute),
               ],
-              _item(context, Icons.account_circle_outlined, 'Profile', '/manager/profile'),
-              _item(context, Icons.settings_outlined, 'Settings', '/manager/settings'),
+              _item(context, Icons.account_circle_outlined, 'Profile', profileRoute),
+              _item(context, Icons.settings_outlined, 'Settings', settingsRoute),
               const Spacer(),
               const Divider(color: Color(0xFF29435C)),
               ListTile(

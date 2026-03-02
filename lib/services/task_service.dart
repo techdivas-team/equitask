@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../models/task.dart';
 import 'api_services.dart';
 import 'http_api_service.dart';
@@ -49,7 +50,18 @@ class TaskService {
   }
 
   Future<void> updateTaskStatus(String id, String status) async {
-    await _apiService.put('/api/tasks/$id', {'status': status});
+    // Convert display status to backend status format
+    final backendStatus = _convertToBackendStatus(status);
+    await _apiService.put('/api/tasks/$id', {'status': backendStatus});
+  }
+
+  String _convertToBackendStatus(String displayStatus) {
+    // Convert display status like "In Progress" to "in_progress"
+    return displayStatus.toLowerCase().replaceAll(' ', '_');
+  }
+
+  Future<void> deleteTask(String id) async {
+    await _apiService.delete('/api/tasks/$id');
   }
 
   Future<Task> createTask({
@@ -57,20 +69,23 @@ class TaskService {
     required String description,
     required DateTime dueDate,
     required TaskPriority priority,
-    String status = 'Pending',
+    String status = 'not_started',
   }) async {
-    final response = await _postWithFallback(['/api/tasks', '/tasks'], {
-      'title': title,
-      'description': description,
-      'dueDate': dueDate.toIso8601String(),
-      'priority': priority.name,
-      'urgencyColor': priority == TaskPriority.urgent
-          ? 'red'
-          : priority == TaskPriority.important
-          ? 'yellow'
-          : 'green',
-      'status': status,
-    });
+    final response = await _postWithFallback(
+      ['/api/tasks', '/tasks'],
+      {
+        'title': title,
+        'description': description,
+        'dueDate': dueDate.toIso8601String(),
+        'priority': priority.name,
+        'urgencyColor': priority == TaskPriority.urgent
+            ? 'red'
+            : priority == TaskPriority.important
+            ? 'yellow'
+            : 'green',
+        'status': status,
+      },
+    );
     final taskJson = response['task'] as Map<String, dynamic>? ?? response;
     return Task.fromJson(taskJson);
   }
@@ -101,36 +116,53 @@ class TaskService {
     required String taskDescription,
     String level = 'simple',
   }) async {
-    final response = await _postWithFallback([
-      '/api/ai/simplify-task',
-      '/ai/simplify-task',
-    ], {
-      'taskDescription': taskDescription,
-      'level': level,
-    });
+    try {
+      final response = await _postWithFallback(
+        ['/api/ai/simplify-task', '/ai/simplify-task'],
+        {'taskDescription': taskDescription, 'level': level},
+      );
 
-    final dynamic simplified =
-        response['simplifiedTask'] ??
-        response['simplifiedText'] ??
-        response['summary'] ??
-        response['result'] ??
-        response['data'];
+      final dynamic simplified =
+          response['simplifiedTask'] ??
+          response['simplifiedText'] ??
+          response['summary'] ??
+          response['result'] ??
+          response['data'];
 
-    if (simplified is String && simplified.trim().isNotEmpty) {
-      return simplified.trim();
-    }
-
-    if (simplified is List) {
-      final lines = simplified
-          .map((e) => e.toString().trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-      if (lines.isNotEmpty) {
-        return lines.join('\n');
+      if (simplified is String && simplified.trim().isNotEmpty) {
+        return simplified.trim();
       }
+
+      if (simplified is List) {
+        final lines = simplified
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+        if (lines.isNotEmpty) {
+          return lines.join('\n');
+        }
+      }
+    } catch (e) {
+      // Fallback: generate simple steps from description
+      debugPrint('AI simplify failed, using fallback: $e');
     }
 
-    throw Exception('Unexpected simplify response format');
+    // Fallback: generate simple steps from description
+    final sentences = taskDescription
+        .split(RegExp(r'[.!?]'))
+        .where((s) => s.trim().length > 5)
+        .take(5)
+        .toList();
+
+    if (sentences.isEmpty) {
+      return '1. Break down the task into smaller steps\n2. Set a deadline\n3. Complete the first step\n4. Review your work\n5. Submit completed task';
+    }
+
+    final steps = <String>[];
+    for (var i = 0; i < sentences.length; i++) {
+      steps.add('${i + 1}. ${sentences[i].trim()}');
+    }
+    return steps.join('\n');
   }
 
   Future<void> submitProofFile({
@@ -190,7 +222,9 @@ class TaskService {
     if (filePath != null && filePath.isNotEmpty) {
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
     } else if (fileBytes != null) {
-      request.files.add(http.MultipartFile.fromBytes('file', fileBytes, filename: fileName));
+      request.files.add(
+        http.MultipartFile.fromBytes('file', fileBytes, filename: fileName),
+      );
     }
 
     final streamed = await request.send();
@@ -206,5 +240,98 @@ class TaskService {
       } catch (_) {}
       throw Exception(message);
     }
+  }
+
+  Future<void> submitTextProof({
+    required String taskId,
+    required String proofText,
+  }) async {
+    if (taskId.trim().isEmpty) {
+      throw Exception('Task id is required for proof submission');
+    }
+    if (proofText.trim().isEmpty) {
+      throw Exception('Proof text cannot be empty');
+    }
+
+    final endpoints = ['/api/proof/$taskId/text', '/proof/$taskId/text'];
+    Exception? lastError;
+
+    for (final endpoint in endpoints) {
+      try {
+        await _apiService.post(endpoint, {'text': proofText});
+        return;
+      } on Exception catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw Exception(lastError?.toString() ?? 'Text proof submission failed');
+  }
+
+  Future<void> submitReviewProof({
+    required String taskId,
+    required String reviewText,
+    String? status,
+  }) async {
+    if (taskId.trim().isEmpty) {
+      throw Exception('Task id is required for review submission');
+    }
+    if (reviewText.trim().isEmpty) {
+      throw Exception('Review text cannot be empty');
+    }
+
+    final endpoints = ['/api/proof/$taskId/review', '/proof/$taskId/review'];
+    Exception? lastError;
+
+    for (final endpoint in endpoints) {
+      try {
+        await _apiService.post(endpoint, {
+          'review': reviewText,
+          if (status != null) 'status': status,
+        });
+        return;
+      } on Exception catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw Exception(lastError?.toString() ?? 'Review proof submission failed');
+  }
+
+  /// Mark a step as completed
+  Future<void> completeStep(String taskId, int stepNumber) async {
+    if (taskId.trim().isEmpty) {
+      throw Exception('Task id is required');
+    }
+
+    final endpoints = [
+      '/api/tasks/$taskId/steps/$stepNumber',
+      '/tasks/$taskId/steps/$stepNumber',
+    ];
+    Exception? lastError;
+
+    for (final endpoint in endpoints) {
+      try {
+        await _apiService.patch(endpoint, {'isCompleted': true});
+        return;
+      } on Exception catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw Exception(lastError?.toString() ?? 'Failed to complete step');
+  }
+
+  /// Get pending proofs for manager review
+  Future<List<Task>> fetchPendingProofs() async {
+    final response = await _getWithFallback([
+      '/api/proof/pending',
+      '/proof/pending',
+    ]);
+    final List<dynamic> tasksJson =
+        response['tasks'] as List<dynamic>? ??
+        response['pendingProofs'] as List<dynamic>? ??
+        [];
+    return tasksJson.map((json) => Task.fromJson(json)).toList();
   }
 }

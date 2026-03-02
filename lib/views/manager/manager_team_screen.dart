@@ -26,7 +26,11 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
     final teamService = Provider.of<TeamService>(context);
     final query = _searchController.text.trim().toLowerCase();
     final members = teamService.members
-        .where((m) => m.name.toLowerCase().contains(query) || m.email.toLowerCase().contains(query))
+        .where(
+          (m) =>
+              m.name.toLowerCase().contains(query) ||
+              m.email.toLowerCase().contains(query),
+        )
         .toList();
 
     return Scaffold(
@@ -45,7 +49,14 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Team\nManagement', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF15283B))),
+                    Text(
+                      'Team\nManagement',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF15283B),
+                      ),
+                    ),
                     SizedBox(height: 4),
                     Text(
                       'Manage your team members and invitation access',
@@ -56,16 +67,32 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
               ),
               ElevatedButton.icon(
                 onPressed: _showInviteDialog,
-                icon: const Icon(Icons.person_add_alt_1_outlined, color: Colors.white),
-                label: const Text('Invite Member', style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2F80ED)),
+                icon: const Icon(
+                  Icons.person_add_alt_1_outlined,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Invite Member',
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2F80ED),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          _simpleMetric('Team Members', '${teamService.members.length}', Icons.groups_2_outlined),
+          _simpleMetric(
+            'Team Members',
+            '${teamService.members.length}',
+            Icons.groups_2_outlined,
+          ),
           const SizedBox(height: 10),
-          _simpleMetric('Total Tasks', '${teamService.totalAssignedTasks}', Icons.bar_chart_outlined),
+          _simpleMetric(
+            'Total Tasks',
+            '${teamService.totalAssignedTasks}',
+            Icons.bar_chart_outlined,
+          ),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(16),
@@ -89,7 +116,11 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
             const SizedBox(height: 10),
             const Text(
               'Recent Invites',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF15283B)),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF15283B),
+              ),
             ),
             const SizedBox(height: 8),
             ...teamService.invites.take(3).map(_inviteCard),
@@ -112,9 +143,15 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
         children: [
           Icon(icon, color: const Color(0xFF2F80ED), size: 34),
           const SizedBox(height: 12),
-          Text(label, style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280))),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+          ),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 24, color: Color(0xFF15283B))),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 24, color: Color(0xFF15283B)),
+          ),
         ],
       ),
     );
@@ -142,24 +179,63 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: const Color(0xFFE8F3EE),
-                child: Text(initials, style: const TextStyle(fontSize: 22, color: Color(0xFF1F2937))),
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(member.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF15283B))),
+                    Text(
+                      member.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF15283B),
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(member.email, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
-                    Text(member.phone, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
-                    Text(member.location, style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                    Text(
+                      member.email,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                    if (member.phone != null && member.phone!.isNotEmpty)
+                      Text(
+                        member.phone!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    if (member.location != null && member.location!.isNotEmpty)
+                      Text(
+                        member.location!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(border: Border.all(color: const Color(0xFFD1D5DB)), borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFD1D5DB)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: const Text('Active'),
               ),
             ],
@@ -167,7 +243,10 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0xFFF6F7FB), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF6F7FB),
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -181,14 +260,24 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(onPressed: () {}, child: const Text('View Tasks')),
+                child: OutlinedButton(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/manager/analytics'),
+                  child: const Text('View Tasks'),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/manager/create-task'),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2F80ED)),
-                  child: const Text('Assign Task', style: TextStyle(color: Colors.white)),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/manager/create-task'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2F80ED),
+                  ),
+                  child: const Text(
+                    'Assign Task',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
@@ -218,9 +307,21 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(invite.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(invite.email, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
-                Text('Code: ${invite.inviteCode}', style: const TextStyle(fontSize: 12)),
+                Text(
+                  invite.name ?? 'Pending Registration',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  invite.email,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                Text(
+                  'Code: ${invite.inviteCode}',
+                  style: const TextStyle(fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -233,9 +334,19 @@ class _ManagerTeamScreenState extends State<ManagerTeamScreen> {
   Widget _stat(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF15283B))),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF15283B),
+          ),
+        ),
       ],
     );
   }
@@ -300,116 +411,124 @@ class _InviteMemberDialogState extends State<_InviteMemberDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  const CircleAvatar(
-                    backgroundColor: Color(0xFFE8F3EE),
-                    child: Icon(
-                      Icons.person_add_alt_1_outlined,
-                      color: Color(0xFF2F80ED),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Invite Team\nMember',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF15283B),
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const CircleAvatar(
+                      backgroundColor: Color(0xFFE8F3EE),
+                      child: Icon(
+                        Icons.person_add_alt_1_outlined,
+                        color: Color(0xFF2F80ED),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Send an invitation to add a new team member to your workspace',
-                style: TextStyle(color: Color(0xFF6B7280)),
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full Name',
-                  hintText: 'Enter full name',
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Invite Team\nMember',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF15283B),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
                 ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty
-                        ? 'Name is required'
-                        : null,
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email Address',
-                  hintText: 'email@company.com',
+                const SizedBox(height: 8),
+                const Text(
+                  'Send an invitation to add a new team member to your workspace',
+                  style: TextStyle(color: Color(0xFF6B7280)),
                 ),
-                validator: (value) =>
-                    value == null || !value.contains('@')
-                        ? 'Valid email is required'
-                        : null,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _roleCard(
-                      'Employee',
-                      _role == 'Employee',
-                      () => setState(() => _role = 'Employee'),
-                    ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                    hintText: 'Enter full name',
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _roleCard(
-                      'Manager',
-                      _role == 'Manager',
-                      () => setState(() => _role = 'Manager'),
-                    ),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Name is required'
+                      : null,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'email@company.com',
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _submitting
-                          ? null
-                          : () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _submitting ? null : _sendInvite,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2F80ED),
-                      ),
-                      icon: const Icon(Icons.mail_outline, color: Colors.white),
-                      label: Text(
-                        _submitting ? 'Sending...' : 'Send Invite',
-                        style: const TextStyle(color: Colors.white),
+                  validator: (value) => value == null || !value.contains('@')
+                      ? 'Valid email is required'
+                      : null,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _roleCard(
+                        'Employee',
+                        _role == 'Employee',
+                        () => setState(() => _role = 'Employee'),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _roleCard(
+                        'Manager',
+                        _role == 'Manager',
+                        () => setState(() => _role = 'Manager'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _submitting
+                            ? null
+                            : () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: _submitting ? null : _sendInvite,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2F80ED),
+                        ),
+                        icon: const Icon(
+                          Icons.mail_outline,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          _submitting ? 'Sending...' : 'Send Invite',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

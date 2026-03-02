@@ -62,8 +62,12 @@ class _InviteEmployeeSignupScreenState extends State<InviteEmployeeSignupScreen>
 
       if (!mounted) return;
       if (success) {
+        final token = authService.lastToken;
+        if (token == null || token.isEmpty) {
+          throw Exception('Missing auth token from backend');
+        }
         session.startSession(
-          token: authService.lastToken ?? 'mock_employee_token',
+          token: token,
           email: authService.lastEmail ?? _emailController.text.trim(),
           role: AppRole.employee,
           organizationId: authService.lastOrganizationId,

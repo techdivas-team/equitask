@@ -102,7 +102,9 @@ class TaskCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Due ${_formatDate(task.dueDate)}',
+                    task.dueDate != null
+                        ? 'Due ${_formatDate(task.dueDate!)}'
+                        : 'No due date',
                     style: const TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: 13,
@@ -143,7 +145,10 @@ class TaskCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE6F1ED),
                   borderRadius: BorderRadius.circular(8),
@@ -196,7 +201,9 @@ class TaskCard extends StatelessWidget {
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
           side: BorderSide(
-            color: isPrimary ? const Color(0xFF2F80ED) : const Color(0xFFD1D5DB),
+            color: isPrimary
+                ? const Color(0xFF2F80ED)
+                : const Color(0xFFD1D5DB),
           ),
           backgroundColor: isPrimary ? const Color(0xFF2F80ED) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

@@ -54,6 +54,9 @@ class UserService {
       'pushNotifications': (response['pushNotifications'] as bool?) ?? true,
       'focusReminders': (response['focusReminders'] as bool?) ?? true,
       'highContrast': (response['highContrast'] as bool?) ?? false,
+      'largeText': (response['largeText'] as bool?) ?? false,
+      'screenReaderAssist':
+          (response['screenReaderAssist'] as bool?) ?? false,
       'reduceMotion': (response['reduceMotion'] as bool?) ?? false,
     };
   }
@@ -64,5 +67,23 @@ class UserService {
       '/settings',
       '/api/users/settings',
     ], settings);
+  }
+
+  Future<User> updateCurrentUser({
+    required String name,
+    required String email,
+  }) async {
+    final payload = {'name': name, 'email': email};
+    Exception? lastError;
+    for (final endpoint in ['/api/users/me', '/api/auth/me', '/me']) {
+      try {
+        final response = await _apiService.put(endpoint, payload);
+        final userJson = response['user'] as Map<String, dynamic>? ?? payload;
+        return User.fromJson(userJson);
+      } on Exception catch (e) {
+        lastError = e;
+      }
+    }
+    throw Exception(lastError?.toString() ?? 'Profile update failed');
   }
 }

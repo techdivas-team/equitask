@@ -45,10 +45,14 @@ class _SignupScreenState extends State<SignupScreen> {
       if (success) {
         if (!mounted) return;
         final session = Provider.of<SessionService>(context, listen: false);
+        final token = authService.lastToken;
+        if (token == null || token.isEmpty) {
+          throw Exception('Missing auth token from backend');
+        }
         session.startSession(
-          token: authService.lastToken ?? 'mock_manager_token',
+          token: token,
           email: authService.lastEmail ?? _emailController.text.trim(),
-          role: AppRole.manager,
+          role: authService.lastRole,
           organizationId: authService.lastOrganizationId,
         );
         Navigator.pushReplacementNamed(context, '/onboarding/account-type');
@@ -76,10 +80,14 @@ class _SignupScreenState extends State<SignupScreen> {
       if (!mounted) return;
       if (success) {
         final session = Provider.of<SessionService>(context, listen: false);
+        final token = authService.lastToken;
+        if (token == null || token.isEmpty) {
+          throw Exception('Missing auth token from backend');
+        }
         session.startSession(
-          token: authService.lastToken ?? 'mock_google_token',
+          token: token,
           email: authService.lastEmail ?? _emailController.text.trim(),
-          role: AppRole.manager,
+          role: authService.lastRole,
           organizationId: authService.lastOrganizationId,
         );
         Navigator.pushReplacementNamed(context, '/onboarding/account-type');

@@ -85,4 +85,17 @@ class HttpApiService implements ApiService {
     final response = await http.delete(url, headers: _buildHeaders());
     await _handleResponse(response);
   }
+
+  Future<Map<String, dynamic>> patch(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final response = await http.patch(
+      url,
+      headers: _buildHeaders(),
+      body: jsonEncode(data),
+    );
+    return _handleResponse(response);
+  }
 }

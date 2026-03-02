@@ -19,6 +19,15 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+  // Helper function to navigate to dashboard based on role
+  void _navigateToDashboard(BuildContext context, AppRole role) {
+    if (role == AppRole.manager) {
+      Navigator.pushReplacementNamed(context, '/manager/dashboard');
+    } else {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -39,13 +48,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       if (success) {
         final session = Provider.of<SessionService>(context, listen: false);
+        final token = authService.lastToken;
+        if (token == null || token.isEmpty) {
+          throw Exception('Missing auth token from backend');
+        }
         session.startSession(
-          token: authService.lastToken ?? 'mock_token',
+          token: token,
           email: authService.lastEmail ?? _emailController.text.trim(),
           role: authService.lastRole,
           organizationId: authService.lastOrganizationId,
         );
-        Navigator.pushReplacementNamed(context, '/onboarding/account-type');
+        // For returning users, go directly to dashboard
+        _navigateToDashboard(context, authService.lastRole);
       } else {
         ScaffoldMessenger.of(
           context,
@@ -69,13 +83,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       if (success) {
         final session = Provider.of<SessionService>(context, listen: false);
+        final token = authService.lastToken;
+        if (token == null || token.isEmpty) {
+          throw Exception('Missing auth token from backend');
+        }
         session.startSession(
-          token: authService.lastToken ?? 'mock_google_token',
+          token: token,
           email: authService.lastEmail ?? _emailController.text.trim(),
           role: authService.lastRole,
           organizationId: authService.lastOrganizationId,
         );
-        Navigator.pushReplacementNamed(context, '/onboarding/account-type');
+        // For returning users, go directly to dashboard
+        _navigateToDashboard(context, authService.lastRole);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Google sign in cancelled')),
@@ -141,7 +160,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Center(
                       child: Text(
                         'Sign in to your EquiTask AI account',
-                        style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B7280),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -258,10 +280,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         const Text(
                           'Don\'t have an account? ',
-                          style: TextStyle(color: Color(0xFF6B7280), fontSize: 14),
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 14,
+                          ),
                         ),
                         TextButton(
-                          onPressed: () => Navigator.pushNamed(context, '/signup'),
+                          onPressed: () =>
+                              Navigator.pushNamed(context, '/signup'),
                           style: TextButton.styleFrom(
                             minimumSize: Size.zero,
                             padding: const EdgeInsets.symmetric(horizontal: 4),

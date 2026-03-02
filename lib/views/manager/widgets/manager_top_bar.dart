@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../services/session_service.dart';
 
 class ManagerTopBar extends StatelessWidget implements PreferredSizeWidget {
   final String currentRoute;
@@ -7,42 +9,64 @@ class ManagerTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = Provider.of<SessionService>(context);
+    final isPersonal = session.accountMode == AccountMode.individual;
+    final isHighContrast = session.highContrastEnabled;
+    final dashboardRoute = isPersonal ? '/dashboard' : '/manager/dashboard';
+    final notificationsRoute = isPersonal
+        ? '/notifications'
+        : '/manager/notifications';
+    final settingsRoute = isPersonal ? '/settings' : '/manager/settings';
+    final profileRoute = isPersonal ? '/profile' : '/manager/profile';
+    final background = isHighContrast ? Colors.black : Colors.white;
+    final inactiveIcon = isHighContrast
+        ? Colors.white
+        : const Color(0xFF344054);
+
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: background,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       leading: Builder(
         builder: (context) => IconButton(
           onPressed: () => Scaffold.of(context).openDrawer(),
-          icon: const Icon(Icons.menu, color: Color(0xFF344054)),
+          icon: Icon(Icons.menu, color: inactiveIcon),
         ),
       ),
       actions: [
         _icon(
           context,
           icon: Icons.home_outlined,
-          route: '/manager/dashboard',
-          active: currentRoute == '/manager/dashboard',
+          route: dashboardRoute,
+          active: currentRoute == dashboardRoute,
+          inactiveIconColor: inactiveIcon,
+          isHighContrast: isHighContrast,
         ),
         _icon(
           context,
           icon: Icons.notifications_none_outlined,
-          route: '/manager/notifications',
-          active: currentRoute == '/manager/notifications',
+          route: notificationsRoute,
+          active: currentRoute == notificationsRoute,
           dot: true,
+          inactiveIconColor: inactiveIcon,
+          isHighContrast: isHighContrast,
         ),
         _icon(
           context,
           icon: Icons.settings_outlined,
-          route: '/manager/settings',
-          active: currentRoute == '/manager/settings',
+          route: settingsRoute,
+          active: currentRoute == settingsRoute,
           boxed: true,
+          inactiveIconColor: inactiveIcon,
+          isHighContrast: isHighContrast,
         ),
         _icon(
           context,
           icon: Icons.account_circle_outlined,
-          route: '/manager/profile',
-          active: currentRoute == '/manager/profile',
+          route: profileRoute,
+          active: currentRoute == profileRoute,
+          inactiveIconColor: inactiveIcon,
+          isHighContrast: isHighContrast,
         ),
         const SizedBox(width: 8),
       ],
@@ -54,12 +78,17 @@ class ManagerTopBar extends StatelessWidget implements PreferredSizeWidget {
     required IconData icon,
     required String route,
     required bool active,
+    required Color inactiveIconColor,
+    required bool isHighContrast,
     bool boxed = false,
     bool dot = false,
   }) {
     final button = IconButton(
       onPressed: () => Navigator.pushReplacementNamed(context, route),
-      icon: Icon(icon, color: active ? const Color(0xFF2F80ED) : const Color(0xFF344054)),
+      icon: Icon(
+        icon,
+        color: active ? const Color(0xFF2F80ED) : inactiveIconColor,
+      ),
     );
     final widget = boxed
         ? Container(
@@ -67,7 +96,9 @@ class ManagerTopBar extends StatelessWidget implements PreferredSizeWidget {
             width: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFD0D5DD)),
+              border: Border.all(
+                color: isHighContrast ? Colors.white : const Color(0xFFD0D5DD),
+              ),
             ),
             child: button,
           )

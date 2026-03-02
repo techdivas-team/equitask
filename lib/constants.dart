@@ -1,4 +1,4 @@
-const String apiBaseUrl = 'https://nonintoxicant-noemi-sullenly.ngrok-free.dev';
+const String apiBaseUrl = 'https://equitask-backend.onrender.com';
 const String googleWebClientId = String.fromEnvironment(
   'GOOGLE_WEB_CLIENT_ID',
   defaultValue:

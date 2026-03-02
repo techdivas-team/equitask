@@ -16,8 +16,19 @@ class ManagerProfileScreen extends StatefulWidget {
 
 class _ManagerProfileScreenState extends State<ManagerProfileScreen> {
   late final UserService _userService;
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
   User? _user;
   bool _isLoading = true;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -33,11 +44,39 @@ class _ManagerProfileScreenState extends State<ManagerProfileScreen> {
       if (!mounted) return;
       setState(() {
         _user = user;
+        _nameController.text = user.name;
+        _emailController.text = user.email;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load profile: $e')));
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
+    try {
+      final updated = await _userService.updateCurrentUser(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() => _user = updated);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to save profile: $e')));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -45,83 +84,176 @@ class _ManagerProfileScreenState extends State<ManagerProfileScreen> {
   Widget build(BuildContext context) {
     final session = Provider.of<SessionService>(context);
     final isIndividual = session.accountMode == AccountMode.individual;
+    final isHighContrast = session.highContrastEnabled;
     final roleLabel = isIndividual ? 'Individual' : 'Manager';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F7),
+      backgroundColor: isHighContrast ? Colors.black : const Color(0xFFF3F5F7),
       appBar: const ManagerTopBar(currentRoute: '/manager/profile'),
       drawer: const ManagerDrawer(currentRoute: '/manager/profile'),
       floatingActionButton: const SupportFabStack(showClipboard: true),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadProfile,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2F80ED), Color(0xFF132B44)],
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2F80ED), Color(0xFF132B44)],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: const Color(0xFFDCEBFF),
-                          child: Text(
-                            _initials(_user?.name ?? ''),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF132B44),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: const Color(0xFFDCEBFF),
+                            child: Text(
+                              _initials(_nameController.text),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF132B44),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _user?.name ?? 'Unknown User',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _nameController.text.isEmpty
+                                      ? 'Unknown User'
+                                      : _nameController.text,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _user?.email ?? '-',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFFE5E7EB),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _emailController.text.isEmpty
+                                      ? '-'
+                                      : _emailController.text,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFFE5E7EB),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _profileTile(
+                      label: 'Full Name',
+                      controller: _nameController,
+                      icon: Icons.person_outline,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Name is required';
+                        }
+                        return null;
+                      },
+                    ),
+                    _profileTile(
+                      label: 'Email Address',
+                      controller: _emailController,
+                      icon: Icons.mail_outline,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Email is required';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                    _infoTile(
+                      Icons.badge_outlined,
+                      'User ID',
+                      _user?.id.isNotEmpty == true ? _user!.id : '-',
+                    ),
+                    _infoTile(Icons.work_outline, 'Role', roleLabel),
+                    _infoTile(
+                      Icons.apartment_outlined,
+                      'Workspace Mode',
+                      isIndividual ? 'Personal' : 'Organization',
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSaving ? null : _saveProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2F80ED),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                      ],
+                        icon: _isSaving
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.save_outlined),
+                        label: Text(_isSaving ? 'Saving...' : 'Save Profile'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  _profileTile(Icons.badge_outlined, 'User ID', _user?.id ?? '-'),
-                  _profileTile(Icons.work_outline, 'Role', roleLabel),
-                  _profileTile(
-                    Icons.apartment_outlined,
-                    'Workspace Mode',
-                    isIndividual ? 'Personal' : 'Organization',
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );
   }
 
-  Widget _profileTile(IconData icon, String label, String value) {
+  Widget _profileTile({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    required String? Function(String?) validator,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFD8DDE6)),
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        validator: validator,
+        decoration: InputDecoration(
+          isDense: true,
+          labelText: label,
+          prefixIcon: Icon(icon, color: const Color(0xFF4B5563)),
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String label, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),

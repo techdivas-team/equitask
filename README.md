@@ -162,3 +162,23 @@ Configuration utilities (optional depending on your project).
 ```bash
 npm install
  
+
+## DevOps Setup
+
+The application deployment and operational setup were handled by the DevOps engineer. Logging and request monitoring were implemented to track API requests and system health.
+
+### Deployment
+The backend API is deployed on Render for staging.
+
+### CI/CD
+A basic CI pipeline is configured using GitHub Actions to run checks when code is pushed to the dev branch.
+
+### Monitoring
+Morgan middleware is used to log HTTP requests for monitoring and debugging.
+
+### Environment Variables
+Sensitive credentials such as database connection strings and JWT secrets are securely managed using environment variables.
+
+### Backup & Rollback Plan
+If a deployment fails, the previous stable commit can be redeployed from GitHub using Render's manual deploy feature.
+
